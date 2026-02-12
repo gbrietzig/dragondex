@@ -4,7 +4,6 @@ import { Heart } from 'lucide-react';
 import { ScouterStat } from './ScouterStat';
 
 interface CharacterCardProps {
-    id: number;
     name: string;
     image: string;
     ki: string;

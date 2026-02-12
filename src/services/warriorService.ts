@@ -32,9 +32,9 @@ export interface ApiResponse<T> {
 }
 
 export const warriorService = {
-    getCharacters: async (page = 1, limit = 50) => {
+    getCharacters: async (page = 1, limit = 50, race?: string, affiliation?: string) => {
         const response = await api.get<ApiResponse<Warrior>>(`/characters`, {
-            params: { page, limit },
+            params: { page, limit, race, affiliation },
         });
         return response.data;
     },

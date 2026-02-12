@@ -4,12 +4,23 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { RadarSweep } from './components/radar/RadarSweep'
 import { CharacterCard } from './components/ui/CharacterCard'
 import { CharacterDetail } from './components/ui/CharacterDetail'
+import { FilterScouter } from './components/ui/FilterScouter'
 import { useWarriors } from './hooks/useWarriors'
 import { useFavorites } from './hooks/useFavorites'
 import { warriorService, Warrior } from './services/warriorService'
 
 function App() {
-    const { warriors, loading, error, searchQuery, setSearchQuery } = useWarriors();
+    const {
+        warriors,
+        loading,
+        error,
+        searchQuery,
+        setSearchQuery,
+        selectedRace,
+        setSelectedRace,
+        selectedAffiliation,
+        setSelectedAffiliation
+    } = useWarriors();
     const { toggleFavorite, isFavorite } = useFavorites();
     const [selectedCharacter, setSelectedCharacter] = useState<Warrior | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -73,8 +84,8 @@ function App() {
                         <button
                             onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
                             className={`p-2 rounded-lg border transition-all ${showOnlyFavorites
-                                    ? 'bg-dbz-orange/20 border-dbz-orange text-dbz-orange'
-                                    : 'bg-slate-900/50 border-slate-700/50 text-slate-500 hover:border-dbz-orange'
+                                ? 'bg-dbz-orange/20 border-dbz-orange text-dbz-orange'
+                                : 'bg-slate-900/50 border-slate-700/50 text-slate-500 hover:border-dbz-orange'
                                 }`}
                             title={showOnlyFavorites ? 'Mostrar Todos' : 'Ver Favoritos'}
                         >
@@ -115,8 +126,8 @@ function App() {
                     <button
                         onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
                         className={`w-full py-3 rounded-lg border flex items-center justify-center gap-2 font-bold uppercase tracking-widest text-xs transition-all ${showOnlyFavorites
-                                ? 'bg-dbz-orange border-dbz-orange text-white'
-                                : 'bg-slate-900 border-slate-800 text-slate-400'
+                            ? 'bg-dbz-orange border-dbz-orange text-white'
+                            : 'bg-slate-900 border-slate-800 text-slate-400'
                             }`}
                     >
                         <Heart className={`w-4 h-4 ${showOnlyFavorites ? 'fill-white' : ''}`} />
@@ -160,49 +171,63 @@ function App() {
                     )}
                 </AnimatePresence>
 
-                {/* Empty State */}
-                {!loading && filteredWarriors.length === 0 && !error && (
-                    <div className="text-center py-20 bg-slate-900/50 rounded-2xl border-2 border-dashed border-slate-800">
-                        <RadarIcon className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-                        <h3 className="text-xl font-bold uppercase tracking-widest text-slate-500">
-                            {showOnlyFavorites ? "Nenhum favorito selecionado" : "Nenhum sinal detectado"}
-                        </h3>
-                        <p className="text-slate-600 mt-2 font-mono text-sm uppercase">TENTE RECALIBRAR OS SENSORES DE BUSCA</p>
-                    </div>
-                )}
+                <div className="flex flex-col lg:flex-row gap-8">
+                    {/* Sidebar Filters */}
+                    <aside className="w-full lg:w-80 flex-shrink-0">
+                        <FilterScouter
+                            selectedRace={selectedRace}
+                            setSelectedRace={setSelectedRace}
+                            selectedAffiliation={selectedAffiliation}
+                            setSelectedAffiliation={setSelectedAffiliation}
+                        />
+                    </aside>
 
-                {/* Character Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <AnimatePresence mode="popLayout">
-                        {filteredWarriors.map((char) => (
-                            <CharacterCard
-                                key={char.id}
-                                id={char.id}
-                                name={char.name}
-                                image={char.image}
-                                ki={char.ki}
-                                race={char.race}
-                                affiliation={char.affiliation}
-                                isFavorite={isFavorite(char.id)}
-                                onToggleFavorite={(e) => {
-                                    e.stopPropagation();
-                                    toggleFavorite(char.id);
-                                }}
-                                onClick={() => handleCharacterClick(char)}
-                            />
-                        ))}
-                    </AnimatePresence>
-
-                    {/* Loading Skeletons */}
-                    {loading && [1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                        <div key={i} className="bg-slate-900/30 border-2 border-slate-800/50 rounded-xl h-[400px] animate-pulse overflow-hidden">
-                            <div className="aspect-[3/4] bg-slate-950/50"></div>
-                            <div className="p-4 space-y-3">
-                                <div className="h-6 w-3/4 bg-slate-800 rounded"></div>
-                                <div className="h-4 w-1/2 bg-slate-800 rounded"></div>
+                    {/* Character Grid Container */}
+                    <div className="flex-1">
+                        {/* Empty State */}
+                        {!loading && filteredWarriors.length === 0 && !error && (
+                            <div className="text-center py-20 bg-slate-900/50 rounded-2xl border-2 border-dashed border-slate-800">
+                                <RadarIcon className="w-16 h-16 text-slate-700 mx-auto mb-4" />
+                                <h3 className="text-xl font-bold uppercase tracking-widest text-slate-500">
+                                    {showOnlyFavorites ? "Nenhum favorito selecionado" : "Nenhum sinal detectado"}
+                                </h3>
+                                <p className="text-slate-600 mt-2 font-mono text-sm uppercase">TENTE RECALIBRAR OS SENSORES DE BUSCA</p>
                             </div>
+                        )}
+
+                        {/* Character Grid */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                            <AnimatePresence mode="popLayout">
+                                {filteredWarriors.map((char) => (
+                                    <CharacterCard
+                                        key={char.id}
+                                        name={char.name}
+                                        image={char.image}
+                                        ki={char.ki}
+                                        race={char.race}
+                                        affiliation={char.affiliation}
+                                        isFavorite={isFavorite(char.id)}
+                                        onToggleFavorite={(e) => {
+                                            e.stopPropagation();
+                                            toggleFavorite(char.id);
+                                        }}
+                                        onClick={() => handleCharacterClick(char)}
+                                    />
+                                ))}
+                            </AnimatePresence>
+
+                            {/* Loading Skeletons */}
+                            {loading && [1, 2, 3, 4, 5, 6].map((i) => (
+                                <div key={i} className="bg-slate-900/30 border-2 border-slate-800/50 rounded-xl h-[400px] animate-pulse overflow-hidden">
+                                    <div className="aspect-[3/4] bg-slate-950/50"></div>
+                                    <div className="p-4 space-y-3">
+                                        <div className="h-6 w-3/4 bg-slate-800 rounded"></div>
+                                        <div className="h-4 w-1/2 bg-slate-800 rounded"></div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    </div>
                 </div>
             </main>
 

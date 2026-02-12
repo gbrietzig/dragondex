@@ -6,11 +6,13 @@ export const useWarriors = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedRace, setSelectedRace] = useState<string | null>(null);
+    const [selectedAffiliation, setSelectedAffiliation] = useState<string | null>(null);
 
     const fetchWarriors = useCallback(async () => {
         try {
             setLoading(true);
-            const data = await warriorService.getCharacters();
+            const data = await warriorService.getCharacters(1, 50, selectedRace || undefined, selectedAffiliation || undefined);
             setWarriors(data.items);
             setError(null);
         } catch (err) {
@@ -18,7 +20,7 @@ export const useWarriors = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [selectedRace, selectedAffiliation]);
 
     const searchWarriors = useCallback(async (name: string) => {
         if (!name) {
@@ -55,5 +57,15 @@ export const useWarriors = () => {
         return () => clearTimeout(delayDebounceFn);
     }, [searchQuery, searchWarriors, fetchWarriors]);
 
-    return { warriors, loading, error, searchQuery, setSearchQuery };
+    return {
+        warriors,
+        loading,
+        error,
+        searchQuery,
+        setSearchQuery,
+        selectedRace,
+        setSelectedRace,
+        selectedAffiliation,
+        setSelectedAffiliation
+    };
 };
