@@ -1,0 +1,15 @@
+{
+    "project": "dragondex",
+    "created_at": "2026-02-12T05:12:00Z",
+    "os": "windows",
+    "tools": {
+        "git": "2.46.0.windows.1",
+        "node": "22.13.1",
+        "npm": "11.9.0",
+        "gh": "missing (manual repo creation)"
+    },
+    "git": {
+        "initialized": true,
+        "remote": "https://github.com/gbrietzig/dragondex.git"
+    }
+}

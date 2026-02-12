@@ -1,0 +1,30 @@
+﻿# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# AIOS generated files
+.aios/project-status.yaml
+.aios/environment-report.yaml
+
+# Logs
+logs/
+*.log
