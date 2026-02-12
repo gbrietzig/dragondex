@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+<<<<<<< HEAD
+import { X, Globe, Zap, Shield, Swords } from 'lucide-react';
+=======
 import { X, Globe, Zap, Shield, Swords, ChevronRight, ChevronLeft } from 'lucide-react';
+>>>>>>> origin/main
 import { Warrior, Transformation } from '../../services/warriorService';
 import { ScouterStat } from './ScouterStat';
 import { AuraEffect } from './AuraEffect';
