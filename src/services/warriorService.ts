@@ -33,9 +33,15 @@ export interface ApiResponse<T> {
 
 export const warriorService = {
     getCharacters: async (page = 1, limit = 50, race?: string, affiliation?: string) => {
-        const response = await api.get<ApiResponse<Warrior>>(`/characters`, {
+        const response = await api.get<any>(`/characters`, {
             params: { page, limit, race, affiliation },
         });
+
+        // Normalize response: API returns a direct array when filtered by race/affiliation,
+        // but returns an object with an 'items' array when not filtered.
+        if (Array.isArray(response.data)) {
+            return { items: response.data };
+        }
         return response.data;
     },
 
