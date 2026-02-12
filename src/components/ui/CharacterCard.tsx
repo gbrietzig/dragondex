@@ -16,7 +16,6 @@ interface CharacterCardProps {
 }
 
 export const CharacterCard: React.FC<CharacterCardProps> = ({
-    id,
     name,
     image,
     ki,
