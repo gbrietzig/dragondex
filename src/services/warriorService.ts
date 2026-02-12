@@ -1,5 +1,12 @@
 import { api } from './api';
 
+export interface Transformation {
+    id: number;
+    name: string;
+    image: string;
+    ki: string;
+}
+
 export interface Warrior {
     id: number;
     name: string;
@@ -10,6 +17,7 @@ export interface Warrior {
     description: string;
     image: string;
     affiliation: string;
+    transformations?: Transformation[];
 }
 
 export interface ApiResponse<T> {

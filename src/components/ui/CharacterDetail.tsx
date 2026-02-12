@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Globe, Zap, Shield, Swords } from 'lucide-react';
-import { Warrior } from '../../services/warriorService';
+import { X, Globe, Zap, Shield, Swords, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Warrior, Transformation } from '../../services/warriorService';
 import { ScouterStat } from './ScouterStat';
 import { AuraEffect } from './AuraEffect';
 
@@ -12,7 +12,30 @@ interface CharacterDetailProps {
 }
 
 export const CharacterDetail: React.FC<CharacterDetailProps> = ({ character, isOpen, onClose }) => {
+    const [selectedForm, setSelectedForm] = useState<Transformation | Warrior | null>(null);
+
+    // Reset form when character changes, but wait for the character to be loaded
+    React.useEffect(() => {
+        if (character) {
+            setSelectedForm(character);
+        }
+    }, [character]);
+
     if (!character) return null;
+
+    const currentData = selectedForm || character;
+    const isTransformation = (currentData as Transformation).image !== character.image;
+
+    // Determine Aura Color based on name
+    const getAuraColor = (name: string) => {
+        const n = name.toLowerCase();
+        if (n.includes('blue')) return '#00D4FF';
+        if (n.includes('rose') || n.includes('instinct')) return '#FF00A2';
+        if (n.includes('ssj') || n.includes('super saiyan') || n.includes('gold')) return '#FFCC00';
+        if (n.includes('god')) return '#FF4D00';
+        if (n.includes('frieza') || n.includes('freeza')) return '#A200FF';
+        return '#00FF41'; // Default Radar Green
+    };
 
     return (
         <AnimatePresence>
@@ -32,7 +55,7 @@ export const CharacterDetail: React.FC<CharacterDetailProps> = ({ character, isO
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="relative w-full max-w-5xl bg-slate-900 border-2 border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-[90vh] md:h-auto max-h-[90vh]"
+                        className="relative w-full max-w-6xl bg-slate-900 border-2 border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col md:flex-row h-[90vh] md:h-auto max-h-[90vh]"
                     >
                         {/* Close Button */}
                         <button
@@ -43,33 +66,32 @@ export const CharacterDetail: React.FC<CharacterDetailProps> = ({ character, isO
                         </button>
 
                         {/* Left Column: Visual Showcase */}
-                        <div className="relative w-full md:w-1/2 bg-slate-950 flex items-center justify-center p-8 overflow-hidden min-h-[300px]">
-                            <AuraEffect color={character.name.toLowerCase().includes('ssj') ? '#FFCC00' : '#00FF41'} />
+                        <div className="relative w-full md:w-1/2 bg-slate-950 flex items-center justify-center p-8 overflow-hidden min-h-[400px]">
+                            <AuraEffect color={getAuraColor(currentData.name)} />
 
-                            <motion.img
-                                initial={{ opacity: 0, x: -50 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                src={character.image}
-                                alt={character.name}
-                                className="relative z-10 w-full h-full object-contain drop-shadow-[0_0_50px_rgba(0,255,65,0.3)]"
-                            />
+                            <AnimatePresence mode="wait">
+                                <motion.img
+                                    key={currentData.image}
+                                    initial={{ opacity: 0, scale: 0.8, filter: 'blur(10px)' }}
+                                    animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                                    exit={{ opacity: 0, scale: 1.1, filter: 'blur(20px)' }}
+                                    src={currentData.image}
+                                    alt={currentData.name}
+                                    className="relative z-10 w-full h-full object-contain drop-shadow-[0_0_50px_rgba(0,255,65,0.3)]"
+                                />
+                            </AnimatePresence>
 
                             {/* Character Header Overlay */}
                             <div className="absolute bottom-6 left-8 z-20">
                                 <motion.span
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
                                     className="text-dbz-orange font-mono text-xs font-bold tracking-[0.4em] uppercase"
                                 >
-                                    Warrior Found
+                                    {isTransformation ? 'Evolution Detected' : 'Warrior Found'}
                                 </motion.span>
                                 <motion.h2
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.1 }}
-                                    className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter"
+                                    className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter leading-none"
                                 >
-                                    {character.name}
+                                    {currentData.name}
                                 </motion.h2>
                             </div>
                         </div>
@@ -83,22 +105,55 @@ export const CharacterDetail: React.FC<CharacterDetailProps> = ({ character, isO
                                         <Zap className="w-3 h-3 text-dbz-orange" /> Scouter Analysis
                                     </h3>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <ScouterStat label="Current KI" value={character.ki} color="orange" />
+                                        <ScouterStat label="Form KI" value={currentData.ki} color="orange" />
                                         <ScouterStat label="MAX Potential" value={character.maxKi} color="gold" />
                                         <ScouterStat label="Origin Race" value={character.race} color="radar-green" />
                                         <ScouterStat label="Affiliation" value={character.affiliation} color="radar-green" />
                                     </div>
                                 </div>
 
+                                {/* Transformations Selector */}
+                                {character.transformations && character.transformations.length > 0 && (
+                                    <div>
+                                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
+                                            <Swords className="w-3 h-3 text-dbz-orange" /> Adaptive Evolutions
+                                        </h3>
+                                        <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar">
+                                            {/* Base Form Option */}
+                                            <button
+                                                onClick={() => setSelectedForm(character)}
+                                                className={`flex-shrink-0 w-20 h-20 rounded-xl border-2 transition-all overflow-hidden ${selectedForm?.name === character.name ? 'border-dbz-orange bg-dbz-orange/10' : 'border-slate-800 bg-slate-950'
+                                                    }`}
+                                            >
+                                                <img src={character.image} alt="Base" className="w-full h-full object-contain p-2" />
+                                            </button>
+
+                                            {/* Transformations */}
+                                            {character.transformations.map((trans) => (
+                                                <button
+                                                    key={trans.id}
+                                                    onClick={() => setSelectedForm(trans)}
+                                                    className={`flex-shrink-0 w-20 h-20 rounded-xl border-2 transition-all overflow-hidden ${selectedForm?.name === trans.name ? 'border-dbz-orange bg-dbz-orange/10' : 'border-slate-800 bg-slate-950'
+                                                        }`}
+                                                >
+                                                    <img src={trans.image} alt={trans.name} className="w-full h-full object-contain p-2" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* DescriptionSection */}
-                                <div>
-                                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
-                                        <Shield className="w-3 h-3 text-dbz-orange" /> Vital Intel
-                                    </h3>
-                                    <p className="text-slate-400 leading-relaxed font-medium">
-                                        {character.description}
-                                    </p>
-                                </div>
+                                {!isTransformation && (
+                                    <div>
+                                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
+                                            <Shield className="w-3 h-3 text-dbz-orange" /> Vital Intel
+                                        </h3>
+                                        <p className="text-slate-400 leading-relaxed font-medium">
+                                            {character.description}
+                                        </p>
+                                    </div>
+                                )}
 
                                 {/* Technical Specs */}
                                 <div className="pt-6 border-t border-slate-800 grid grid-cols-2 gap-8">

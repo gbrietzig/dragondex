@@ -1,22 +1,29 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Heart } from 'lucide-react';
 import { ScouterStat } from './ScouterStat';
 
 interface CharacterCardProps {
+    id: number;
     name: string;
     image: string;
     ki: string;
     race: string;
     affiliation: string;
+    isFavorite?: boolean;
+    onToggleFavorite?: (e: React.MouseEvent) => void;
     onClick?: () => void;
 }
 
 export const CharacterCard: React.FC<CharacterCardProps> = ({
+    id,
     name,
     image,
     ki,
     race,
     affiliation,
+    isFavorite,
+    onToggleFavorite,
     onClick
 }) => {
     return (
@@ -30,6 +37,17 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
             <div className="absolute inset-0 pointer-events-none opacity-10 group-hover:opacity-20 transition-opacity">
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:14px_24px]"></div>
             </div>
+
+            {/* Favorite Toggle */}
+            <button
+                onClick={onToggleFavorite}
+                className="absolute top-3 left-3 z-30 p-2 rounded-full bg-slate-950/60 border border-slate-800 hover:border-dbz-orange transition-all group/fav"
+            >
+                <Heart
+                    className={`w-4 h-4 transition-colors ${isFavorite ? 'fill-dbz-orange text-dbz-orange' : 'text-slate-500 group-hover/fav:text-dbz-orange'
+                        }`}
+                />
+            </button>
 
             <div className="aspect-[3/4] overflow-hidden bg-slate-950 relative">
                 <img

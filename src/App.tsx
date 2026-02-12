@@ -1,20 +1,41 @@
-import { useState } from 'react'
-import { Search, Radar as RadarIcon, AlertTriangle, Loader2 } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Search, Radar as RadarIcon, AlertTriangle, Loader2, Heart } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RadarSweep } from './components/radar/RadarSweep'
 import { CharacterCard } from './components/ui/CharacterCard'
 import { CharacterDetail } from './components/ui/CharacterDetail'
 import { useWarriors } from './hooks/useWarriors'
-import { Warrior } from './services/warriorService'
+import { useFavorites } from './hooks/useFavorites'
+import { warriorService, Warrior } from './services/warriorService'
 
 function App() {
     const { warriors, loading, error, searchQuery, setSearchQuery } = useWarriors();
+    const { toggleFavorite, isFavorite } = useFavorites();
     const [selectedCharacter, setSelectedCharacter] = useState<Warrior | null>(null);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
 
-    const handleCharacterClick = (char: Warrior) => {
-        setSelectedCharacter(char);
-        setIsDetailOpen(true);
+    const filteredWarriors = useMemo(() => {
+        if (showOnlyFavorites) {
+            return warriors.filter(w => isFavorite(w.id));
+        }
+        return warriors;
+    }, [warriors, showOnlyFavorites, isFavorite]);
+
+    const handleCharacterClick = async (char: Warrior) => {
+        try {
+            setDetailLoading(true);
+            const fullChar = await warriorService.getCharacterById(char.id);
+            setSelectedCharacter(fullChar);
+            setIsDetailOpen(true);
+        } catch (err) {
+            console.error('Falha ao obter inteligência detalhada:', err);
+            setSelectedCharacter(char);
+            setIsDetailOpen(true);
+        } finally {
+            setDetailLoading(false);
+        }
     };
 
     const handleCloseDetail = () => {
@@ -37,19 +58,31 @@ function App() {
                         </h1>
                     </div>
 
-                    <div className="relative flex-1 max-w-md ml-8 hidden md:block">
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Localizar energia vital..."
-                            className="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg py-2 pl-10 pr-4 focus:border-dbz-orange outline-none transition-all font-mono text-sm"
-                        />
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                        {loading && (
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                                <Loader2 className="w-4 h-4 text-radar-green animate-spin" />
-                            </div>
+                    <div className="relative flex-1 max-w-md ml-8 hidden md:flex items-center gap-4">
+                        <div className="relative flex-1">
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Localizar energia vital..."
+                                className="w-full bg-slate-900/50 border border-slate-700/50 rounded-lg py-2 pl-10 pr-4 focus:border-dbz-orange outline-none transition-all font-mono text-sm"
+                            />
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                        </div>
+
+                        <button
+                            onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+                            className={`p-2 rounded-lg border transition-all ${showOnlyFavorites
+                                    ? 'bg-dbz-orange/20 border-dbz-orange text-dbz-orange'
+                                    : 'bg-slate-900/50 border-slate-700/50 text-slate-500 hover:border-dbz-orange'
+                                }`}
+                            title={showOnlyFavorites ? 'Mostrar Todos' : 'Ver Favoritos'}
+                        >
+                            <Heart className={`w-5 h-5 ${showOnlyFavorites ? 'fill-dbz-orange' : ''}`} />
+                        </button>
+
+                        {(loading || detailLoading) && (
+                            <Loader2 className="w-4 h-4 text-radar-green animate-spin" />
                         )}
                     </div>
 
@@ -66,8 +99,8 @@ function App() {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 py-8 relative">
-                {/* Mobile Search */}
-                <div className="md:hidden mb-8">
+                {/* Mobile Search & Favorites */}
+                <div className="md:hidden mb-8 space-y-4">
                     <div className="relative">
                         <input
                             type="text"
@@ -79,20 +112,32 @@ function App() {
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" />
                         {loading && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-radar-green animate-spin" />}
                     </div>
+                    <button
+                        onClick={() => setShowOnlyFavorites(!showOnlyFavorites)}
+                        className={`w-full py-3 rounded-lg border flex items-center justify-center gap-2 font-bold uppercase tracking-widest text-xs transition-all ${showOnlyFavorites
+                                ? 'bg-dbz-orange border-dbz-orange text-white'
+                                : 'bg-slate-900 border-slate-800 text-slate-400'
+                            }`}
+                    >
+                        <Heart className={`w-4 h-4 ${showOnlyFavorites ? 'fill-white' : ''}`} />
+                        {showOnlyFavorites ? 'Exibindo Favoritos' : 'Filtrar Favoritos'}
+                    </button>
                 </div>
 
                 {/* Hero Info */}
                 <section className="mb-12">
                     <h2 className="text-xs uppercase tracking-[0.3em] font-black text-radar-green mb-2">Protocolo Radar do Dragão</h2>
                     <motion.p
-                        key={searchQuery}
+                        key={searchQuery + showOnlyFavorites}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase max-w-2xl"
                     >
-                        {searchQuery
-                            ? `Resultados para "${searchQuery}"`
-                            : "Detectando assinaturas de poder no setor Z."
+                        {showOnlyFavorites
+                            ? "Base de dados: Guerreiros Favoritos"
+                            : searchQuery
+                                ? `Resultados para "${searchQuery}"`
+                                : "Detectando assinaturas de poder no setor Z."
                         }
                     </motion.p>
                 </section>
@@ -116,10 +161,12 @@ function App() {
                 </AnimatePresence>
 
                 {/* Empty State */}
-                {!loading && warriors.length === 0 && !error && (
+                {!loading && filteredWarriors.length === 0 && !error && (
                     <div className="text-center py-20 bg-slate-900/50 rounded-2xl border-2 border-dashed border-slate-800">
                         <RadarIcon className="w-16 h-16 text-slate-700 mx-auto mb-4" />
-                        <h3 className="text-xl font-bold uppercase tracking-widest text-slate-500">Nenhum sinal detectado</h3>
+                        <h3 className="text-xl font-bold uppercase tracking-widest text-slate-500">
+                            {showOnlyFavorites ? "Nenhum favorito selecionado" : "Nenhum sinal detectado"}
+                        </h3>
                         <p className="text-slate-600 mt-2 font-mono text-sm uppercase">TENTE RECALIBRAR OS SENSORES DE BUSCA</p>
                     </div>
                 )}
@@ -127,14 +174,20 @@ function App() {
                 {/* Character Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     <AnimatePresence mode="popLayout">
-                        {warriors.map((char) => (
+                        {filteredWarriors.map((char) => (
                             <CharacterCard
                                 key={char.id}
+                                id={char.id}
                                 name={char.name}
                                 image={char.image}
                                 ki={char.ki}
                                 race={char.race}
                                 affiliation={char.affiliation}
+                                isFavorite={isFavorite(char.id)}
+                                onToggleFavorite={(e) => {
+                                    e.stopPropagation();
+                                    toggleFavorite(char.id);
+                                }}
                                 onClick={() => handleCharacterClick(char)}
                             />
                         ))}
@@ -164,22 +217,10 @@ function App() {
             <footer className="fixed bottom-4 left-4 right-4 pointer-events-none flex justify-between items-end z-40">
                 <div className="bg-slate-900/80 backdrop-blur-sm border border-slate-800 p-3 rounded-lg pointer-events-auto">
                     <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${loading ? 'bg-radar-green animate-ping' : 'bg-dbz-orange'}`}></div>
+                        <div className={`w-2 h-2 rounded-full ${(loading || detailLoading) ? 'bg-radar-green animate-ping' : 'bg-dbz-orange'}`}></div>
                         <span className="text-[10px] font-mono text-slate-400 uppercase">
-                            {loading ? 'ANALYZING_FREQUENCIES...' : 'RADAR_READY_SECTOR_7'}
+                            {(loading || detailLoading) ? 'ANALYZING_FREQUENCIES...' : 'RADAR_READY_SECTOR_7'}
                         </span>
-                    </div>
-                </div>
-
-                {/* Decorative Scouter Element */}
-                <div className="hidden lg:block bg-red-500/10 border border-red-500/20 p-2 rounded font-mono text-[8px] text-red-500 uppercase overflow-hidden w-32">
-                    <div className="animate-pulse">Tracking_Target_Lock: ACTIVE</div>
-                    <div className="h-1 bg-red-500/20 mt-1 overflow-hidden">
-                        <motion.div
-                            animate={{ x: ['-100%', '100%'] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                            className="w-1/2 h-full bg-red-500"
-                        />
                     </div>
                 </div>
             </footer>
